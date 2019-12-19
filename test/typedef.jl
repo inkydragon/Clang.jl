@@ -148,5 +148,5 @@ end
             ccall((:test1,libxxx),FOOP,(Cdouble,Cdouble,FOOP),a,b,c)
         end)
     Base.remove_linenums!(expr)
-    @test ctx.api_buffer[1] == expr
+    @test ctx.api_buffer[2] == expr
 end

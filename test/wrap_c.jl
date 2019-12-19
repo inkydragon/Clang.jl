@@ -17,5 +17,5 @@ using Test
 
     Base.remove_linenums!(exc)
 
-    @test ctx.api_buffer[1] == exc
+    @test ctx.api_buffer[2] == exc
 end

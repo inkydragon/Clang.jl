@@ -40,5 +40,5 @@ using Test
                  ccall((:func_constarr_arg, libxxx), Cint, (Ptr{Cdouble},), x)
              end)
     Base.remove_linenums!(expr)
-    @test ctx.api_buffer[1] == expr
+    @test ctx.api_buffer[2] == expr
 end
