@@ -3,6 +3,30 @@ Unsupported argument types
 """
 const RESERVED_ARG_TYPES = ["va_list"]
 
+
+function get_docstring(cursor::Union{CLFunctionDecl})
+    cxstr = clang_Cursor_getRawCommentText(cursor)
+    if cxstr.data == C_NULL # No comment
+        return ""
+    end
+    cstr = clang_getCString(cxstr)
+    clang_disposeString(cxstr)
+    
+    unsafe_string(cstr)
+end
+
+function gen_julia_docstring(docs::String, sign::Expr)
+    TRIPLE_QUOTES_START = "\"\"\"\n"
+    TRIPLE_QUOTES_ENDS  = "\n\"\"\""
+    docs = replace(docs, r"(\$)" => s"\\\1")
+    docs = replace(escape_string(docs), r"\\n" => "\n")
+    
+    TRIPLE_QUOTES_START * 
+        "    $sign\n\n" *
+        docs * 
+    TRIPLE_QUOTES_ENDS
+end
+
 """
     wrap!(ctx::AbstractContext, cursor::CLFunctionDecl)
 Subroutine for handling function declarations. Note that VarArg functions are not supported.
@@ -50,7 +74,12 @@ function wrap!(ctx::AbstractContext, cursor::CLFunctionDecl)
 
     ctx.libname == "libxxx" && @warn "default libname: \":libxxx\" are being used, did you forget to specify `context.libname`?"
     body = eccall(func_name, Symbol(ctx.libname), ret_type, arg_names, arg_reps)
-
+    
+    push!(ctx.api_buffer, 
+        cursor 
+            |> get_docstring
+            |> s->gen_julia_docstring(s, signature)
+    )
     push!(ctx.api_buffer, Expr(:function, signature, Expr(:block, body)))
 
     return ctx
