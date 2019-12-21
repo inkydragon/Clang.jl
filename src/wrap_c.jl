@@ -10,60 +10,21 @@ function get_docstring(cursor::Union{CLFunctionDecl})
         return ""
     end
     cstr = clang_getCString(cxstr)
-    clang_disposeString(cxstr)
-    
-    unsafe_string(cstr)
-end
 
-function deformat_clang_docstring(docs::String)
-    # 1. remove comment header
-    replace_pair = [
-        "/**" => "",
-        "\n */" => "",
-        " * " => "",
-        " *"  => "",
-    ]
-    for rp in replace_pair
-        docs = replace(docs, rp)
+    try
+        return unsafe_string(cstr)
+    finally
+        clang_disposeString(cxstr)
     end
-
-    # 2. multiline replace & Add section
-    muti_replace_pair = [
-        # 1st \param
-        #   case 1
-        r"(\n)(\n)(\\param )([a-zA-Z_\(\)]+)( )" => s"\1\2# Arguments\1- `\4`: ",
-        #   case 2
-        r"^(\n)(\\param )([a-zA-Z_\(\)]+)( )" => s"\1# Arguments\1- `\3`: ",
-        # \returns
-        r"(\n){1,2}(\\returns )" => "\n\n# Return\n- ",
-    ]
-    for mrp in muti_replace_pair
-        docs = replace(docs, mrp, count=1) # replace only once
-    end
-
-    # 3. keyword replace
-    kw_replace_pair = [
-        ## Doxygen commands
-        # \brief
-        "\\brief " => "",
-        # \c: <tt>
-        r"(\\c )([^\s]+)( |\.|,|\(|\)){1}" => s"`\2` ",
-        # \param
-        r"(\\param )([a-zA-Z_]+)( )" => s"- `\2`: ",
-    ]
-    for kwrp in kw_replace_pair
-        docs = replace(docs, kwrp)
-    end
-
-    docs
 end
 
 function gen_julia_docstring(docs::String, sign::Expr)
     TRIPLE_QUOTES_START = "\"\"\"\n"
     TRIPLE_QUOTES_ENDS  = "\n\"\"\""
+
     docs = replace(docs, r"(\$)" => s"\\\1")
     docs = replace(escape_string(docs), r"\\n" => "\n")
-    
+
     TRIPLE_QUOTES_START * 
         "    $sign\n" *
         docs * 
@@ -121,7 +82,6 @@ function wrap!(ctx::AbstractContext, cursor::CLFunctionDecl)
     push!(ctx.api_buffer, 
         cursor 
             |> get_docstring
-            |> deformat_clang_docstring
             |> s->gen_julia_docstring(s, signature)
     )
     push!(ctx.api_buffer, Expr(:function, signature, Expr(:block, body)))

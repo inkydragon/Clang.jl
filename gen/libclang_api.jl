@@ -375,7 +375,6 @@ end
 # Arguments
 - `Comment`: AST node of any kind.
 
-# Arguments
 - `ChildIdx`: child index (zero-based).
 
 # Return
@@ -403,7 +402,6 @@ end
 
 """
     clang_InlineContentComment_hasTrailingNewline(Comment)
-
 
 # Return
 - non-zero if `Comment` is inline content and has a newline
@@ -473,7 +471,6 @@ end
 # Arguments
 - `Comment`: a `CXComment_InlineCommand` AST node.
 
-# Arguments
 - `ArgIdx`: argument index (zero-based).
 
 # Return
@@ -529,7 +526,6 @@ end
 # Arguments
 - `Comment`: a `CXComment_HTMLStartTag` AST node.
 
-# Arguments
 - `AttrIdx`: attribute index (zero-based).
 
 # Return
@@ -545,7 +541,6 @@ end
 # Arguments
 - `Comment`: a `CXComment_HTMLStartTag` AST node.
 
-# Arguments
 - `AttrIdx`: attribute index (zero-based).
 
 # Return
@@ -587,7 +582,6 @@ end
 # Arguments
 - `Comment`: a `CXComment_BlockCommand` AST node.
 
-# Arguments
 - `ArgIdx`: argument index (zero-based).
 
 # Return
@@ -3569,7 +3563,30 @@ end
 
 """
     clang_getCanonicalCursor(arg1)
-\x10\xa7\xfb 
+
+Retrieve the canonical cursor corresponding to the given cursor.
+
+In the C family of languages, many kinds of entities can be declared several
+times within a single translation unit. For example, a structure type can
+be forward-declared (possibly multiple times) and later defined:
+
+\\code
+struct X;
+struct X;
+struct X {
+  int member;
+};
+\\endcode
+
+The declarations and the definition of `X` are represented by three 
+different cursors, all of which are declarations of the same underlying 
+entity. One of these cursor is considered the \"canonical\" cursor, which
+is effectively the representative for the underlying entity. One can 
+determine if two cursors are declarations of the same underlying entity by
+comparing their canonical cursors.
+
+# Return
+- The canonical cursor for the entity referred to by the given cursor.
 """
 function clang_getCanonicalCursor(arg1)
     ccall((:clang_getCanonicalCursor, libclang), CXCursor, (CXCursor,), arg1)
@@ -3852,7 +3869,6 @@ end
 # Arguments
 - `Module`: a module object.
 
-# Arguments
 - `Index`: top level header index (zero-based).
 
 # Return
